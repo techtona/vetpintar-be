@@ -65,7 +65,7 @@ export class ProductFactory extends BaseFactory<ProductData> {
   }
 
   make(overrides?: Partial<ProductData>): ProductData {
-    const category = overrides?.category || faker.helpers.arrayElement(Object.keys(PRODUCT_TEMPLATES) as ProductCategory[]);
+    const category: ProductCategory = overrides?.category || faker.helpers.arrayElement(Object.keys(PRODUCT_TEMPLATES) as ProductCategory[]);
     const templates = PRODUCT_TEMPLATES[category] || [];
     const template = templates.length > 0 ? faker.helpers.arrayElement(templates) : null;
 
