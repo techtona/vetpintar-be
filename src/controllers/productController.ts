@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest, PaginationParams } from '../types';
 import { prisma } from '../utils/database';
-import { ProductCategory } from '../generated/prisma/index';
+import { ProductCategory } from "@prisma/client";
 
 interface CreateProductRequest {
   name: string;

@@ -1,4 +1,4 @@
-import { PrismaClient, Appointment, AppointmentStatus } from '../generated/prisma/index';
+import { PrismaClient, Appointment, AppointmentStatus } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -58,7 +58,7 @@ export class AppointmentService {
       });
 
       if (!patient) {
-        throw createError('Patient not found or does not belong to this clinic', 404);
+        throw createError(404, 'Patient not found or does not belong to this clinic');
       }
 
       // Validate veterinarian if provided
@@ -77,7 +77,7 @@ export class AppointmentService {
         });
 
         if (!veterinarian) {
-          throw createError('Veterinarian not found or does not have access to this clinic', 404);
+          throw createError(404, 'Veterinarian not found or does not have access to this clinic');
         }
       }
 
@@ -91,7 +91,7 @@ export class AppointmentService {
         );
 
         if (conflictingAppointment) {
-          throw createError('Veterinarian already has an appointment at this time', 409);
+          throw createError(409, 'Veterinarian already has an appointment at this time');
         }
       }
 
@@ -322,7 +322,7 @@ export class AppointmentService {
       });
 
       if (!appointment) {
-        throw createError('Appointment not found', 404);
+        throw createError(404, 'Appointment not found');
       }
 
       return appointment;
@@ -346,7 +346,7 @@ export class AppointmentService {
       });
 
       if (!existingAppointment) {
-        throw createError('Appointment not found', 404);
+        throw createError(404, 'Appointment not found');
       }
 
       // Validate veterinarian if updating
@@ -365,7 +365,7 @@ export class AppointmentService {
         });
 
         if (!veterinarian) {
-          throw createError('Veterinarian not found or does not have access to this clinic', 404);
+          throw createError(404, 'Veterinarian not found or does not have access to this clinic');
         }
       }
 
@@ -386,7 +386,7 @@ export class AppointmentService {
           );
 
           if (conflictingAppointment) {
-            throw createError('Veterinarian already has an appointment at this time', 409);
+            throw createError(409, 'Veterinarian already has an appointment at this time');
           }
         }
       }
@@ -452,7 +452,7 @@ export class AppointmentService {
       });
 
       if (!appointment) {
-        throw createError('Appointment not found', 404);
+        throw createError(404, 'Appointment not found');
       }
 
       const updatedAppointment = await this.prisma.appointment.update({
@@ -516,13 +516,13 @@ export class AppointmentService {
       });
 
       if (!appointment) {
-        throw createError('Appointment not found', 404);
+        throw createError(404, 'Appointment not found');
       }
 
       // Only allow deletion of scheduled or cancelled appointments
       if (appointment.status === AppointmentStatus.COMPLETED ||
           appointment.status === AppointmentStatus.IN_PROGRESS) {
-        throw createError('Cannot delete completed or in-progress appointments', 400);
+        throw createError(400, 'Cannot delete completed or in-progress appointments');
       }
 
       await this.prisma.appointment.delete({

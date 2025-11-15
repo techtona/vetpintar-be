@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest, CreatePatientRequest, UpdatePatientRequest } from '../types';
+import { AuthenticatedRequest } from '../types';
 import { prisma } from '../utils/database';
 
 class PatientController {
@@ -127,7 +127,7 @@ class PatientController {
   // POST /api/patients
   createPatient = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const patientData: CreatePatientRequest = req.body;
+      const patientData = req.body;
 
       const patient = await prisma.patient.create({
         data: {
@@ -164,7 +164,7 @@ class PatientController {
   updatePatient = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const updateData: UpdatePatientRequest = req.body;
+      const updateData = req.body;
 
       const existingPatient = await prisma.patient.findFirst({
         where: {

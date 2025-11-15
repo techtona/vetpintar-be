@@ -1,0 +1,44 @@
+name: Deploy via rsync
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rsync to server
+        run: |
+          rsync -arv \
+            --exclude='.git*' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            --delete \
+            --chown=root:root \
+            . /opt/vetpintar-new-be
+
+      - name: Build Docker images
+        run: |
+          cd /opt/vetpintar-new-be
+          docker compose build --no-cache
+
+      - name: Deploy containers
+        run: |
+          cd /opt/vetpintar-new-be
+          docker compose down
+          docker compose up -d
+
+      - name: Cleanup old images
+        run: |
+          docker image prune -f
+
+      - name: Verify deployment
+        run: |
+          cd /opt/vetpintar-new-be
+          docker compose ps
+          echo "Deployment completed successfully!"

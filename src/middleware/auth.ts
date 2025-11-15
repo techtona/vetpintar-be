@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JWTService, JWTPayload } from '../utils/jwt';
 import { prisma } from '../utils/database';
-import { UserRole } from '../generated/prisma/index';
+import { UserRole } from "@prisma/client";
 import { AuthenticatedRequest } from '../types';
 
 export { AuthenticatedRequest } from '../types';

@@ -1,4 +1,4 @@
-import { PrismaClient, MedicalRecord, RecordStatus } from '../generated/prisma/index';
+import { PrismaClient, MedicalRecord, RecordStatus } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -215,10 +215,10 @@ export class MedicalRecordService {
                 name: true
               }
             },
-            hospitalization: true,
+            hospitalizations: true,
             _count: {
               select: {
-                hospitalization: true
+                hospitalizations: true
               }
             }
           }
@@ -276,7 +276,7 @@ export class MedicalRecordService {
               name: true
             }
           },
-          hospitalization: {
+          hospitalizations: {
             orderBy: { admissionDate: 'desc' }
           }
         }
@@ -411,7 +411,7 @@ export class MedicalRecordService {
       logger.info(`Hospitalization created: ${hospitalization.id} for medical record: ${data.medicalRecordId}`);
       return hospitalization;
     } catch (error) {
-      logger.error('Error creating hospitalization:', error);
+      logger.error('Error creating hospitalizations:', error);
       throw error;
     }
   }
@@ -434,8 +434,7 @@ export class MedicalRecordService {
       const updatedHospitalization = await this.prisma.hospitalization.update({
         where: { id },
         data: {
-          ...data,
-          updatedAt: new Date()
+          ...data
         },
         include: {
           medicalRecord: {
@@ -469,7 +468,7 @@ export class MedicalRecordService {
       logger.info(`Hospitalization updated: ${id}`);
       return updatedHospitalization;
     } catch (error) {
-      logger.error('Error updating hospitalization:', error);
+      logger.error('Error updating hospitalizations:', error);
       throw error;
     }
   }
@@ -487,7 +486,7 @@ export class MedicalRecordService {
         include: {
           _count: {
             select: {
-              hospitalization: true
+              hospitalizations: true
             }
           }
         }
@@ -498,7 +497,7 @@ export class MedicalRecordService {
       }
 
       // Check if patient is currently hospitalized
-      if (medicalRecord._count.hospitalization > 0) {
+      if (medicalRecord._count.hospitalizations > 0) {
         const activeHospitalization = await this.prisma.hospitalization.findFirst({
           where: {
             medicalRecordId: id,
@@ -581,7 +580,7 @@ export class MedicalRecordService {
         inpatients,
         discharged,
         referred,
-        averageVisitCost: avgCostData._avg.totalAmount || 0,
+        averageVisitCost: Number(avgCostData._avg.totalAmount) || 0,
         monthlyVisits
       };
     } catch (error) {

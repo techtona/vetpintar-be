@@ -1,4 +1,4 @@
-import { PrismaClient, Invoice, InvoiceStatus, PaymentMethod, PaymentStatus } from '../generated/prisma/index';
+import { PrismaClient, Invoice, InvoiceStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -390,10 +390,10 @@ export class InvoiceService {
 
       // Calculate paid amount
       const paidAmount = invoice.payments.reduce((sum, payment) => {
-        return sum + (payment.status === PaymentStatus.SUCCESS ? payment.amount : 0);
+        return sum + (payment.status === PaymentStatus.SUCCESS ? Number(payment.amount) : 0);
       }, 0);
 
-      const remainingAmount = invoice.totalAmount - paidAmount;
+      const remainingAmount = Number(invoice.totalAmount) - paidAmount;
 
       if (data.amount > remainingAmount) {
         throw createError(400, 'Payment amount exceeds remaining balance');
@@ -415,7 +415,7 @@ export class InvoiceService {
       const newPaidAmount = paidAmount + data.amount;
       let newStatus = invoice.status;
 
-      if (newPaidAmount >= invoice.totalAmount) {
+      if (newPaidAmount >= Number(invoice.totalAmount)) {
         newStatus = InvoiceStatus.PAID;
       } else if (newPaidAmount > 0) {
         newStatus = InvoiceStatus.PARTIAL;
@@ -446,7 +446,7 @@ export class InvoiceService {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         paymentAmount: data.amount,
-        remainingBalance: invoice.totalAmount - newPaidAmount,
+        remainingBalance: Number(invoice.totalAmount) - newPaidAmount,
         status: newStatus
       });
 
@@ -572,9 +572,9 @@ export class InvoiceService {
         })
       ]);
 
-      const totalRevenue = revenueData._sum.totalAmount || 0;
-      const monthlyRevenue = monthlyRevenueData._sum.totalAmount || 0;
-      const averageInvoiceAmount = totalAmountData._avg.totalAmount || 0;
+      const totalRevenue = Number(revenueData._sum.totalAmount) || 0;
+      const monthlyRevenue = Number(monthlyRevenueData._sum.totalAmount) || 0;
+      const averageInvoiceAmount = Number(totalAmountData._avg.totalAmount) || 0;
 
       return {
         totalInvoices,

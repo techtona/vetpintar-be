@@ -1,0 +1,29 @@
+// ============================================
+// CLINIC & ORGANIZATION
+// ============================================
+
+model Clinic {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  province           String?
+  postalCode         String?            @map("postal_code")
+  logoUrl            String?            @map("logo_url")
+  isActive           Boolean            @default(true) @map("is_active")
+  subscriptionStatus SubscriptionStatus @default(TRIAL) @map("subscription_status")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  clinicAccesses ClinicAccess[]
+  patients       Patient[]
+  medicalRecords MedicalRecord[]
+  products       Product[]
+  invoices       Invoice[]
+  appointments   Appointment[]
+
+  @@map("clinics")
+}

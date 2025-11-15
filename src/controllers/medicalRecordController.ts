@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest, PaginationParams } from '../types';
 import { prisma } from '../utils/database';
-import { RecordStatus } from '../generated/prisma/index';
+import { RecordStatus } from "@prisma/client";
 
 interface CreateMedicalRecordRequest {
   patientId: string;

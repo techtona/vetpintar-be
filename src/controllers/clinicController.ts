@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest, CreateClinicRequest, UpdateClinicRequest } from '../types';
+import { AuthenticatedRequest } from '../types';
 import { prisma } from '../utils/database';
 
 /**
@@ -438,7 +438,7 @@ class ClinicController {
   // POST /api/clinics
   createClinic = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const clinicData: CreateClinicRequest = req.body;
+      const clinicData = req.body;
 
       const clinic = await prisma.clinic.create({
         data: clinicData,
@@ -534,7 +534,7 @@ class ClinicController {
   updateClinic = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const updateData: UpdateClinicRequest = req.body;
+      const updateData = req.body;
 
       const clinic = await prisma.clinic.update({
         where: { id },

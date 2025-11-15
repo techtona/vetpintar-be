@@ -1,0 +1,93 @@
+// ============================================
+// CONFIGURATION
+// ============================================
+// This file is the base configuration for Prisma schema
+// Do not modify schema.prisma directly, edit files in /schemas/ instead
+// Run: npm run prisma:merge to regenerate schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS - All enums must be defined in _base.prisma
+// ============================================
+
+enum UserRole {
+  OWNER
+  VETERINARIAN
+  ADMIN
+  STAFF
+  CUSTOMER
+  GUEST
+  SUPER_ADMIN
+}
+
+enum ClinicAccessRole {
+  OWNER
+  MANAGER
+  VETERINARIAN
+  STAFF
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum ProductCategory {
+  MEDICINE
+  FOOD
+  ACCESSORY
+  SERVICE
+  VACCINE
+  CONSUMABLE
+}
+
+enum RecordStatus {
+  OUTPATIENT
+  INPATIENT
+  DISCHARGED
+  REFERRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CREDIT_CARD
+  E_WALLET
+  XENDIT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}

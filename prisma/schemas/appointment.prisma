@@ -1,0 +1,27 @@
+// ============================================
+// APPOINTMENTS
+// ============================================
+
+model Appointment {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId        String            @map("clinic_id") @db.Uuid
+  patientId       String            @map("patient_id") @db.Uuid
+  veterinarianId  String?           @map("veterinarian_id") @db.Uuid
+  appointmentDate DateTime          @map("appointment_date")
+  appointmentTime String            @map("appointment_time")
+  duration        Int               @default(30) // in minutes
+  type            String // e.g., "Regular Checkup", "Vaccination", "Surgery"
+  status          AppointmentStatus @default(SCHEDULED)
+  reason          String?
+  notes           String?
+  reminderSent    Boolean           @default(false) @map("reminder_sent")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  clinic       Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  veterinarian User?   @relation("VeterinarianAppointments", fields: [veterinarianId], references: [id])
+
+  @@map("appointments")
+}

@@ -1,4 +1,4 @@
-import { PrismaClient, User, Clinic, UserRole } from '../generated/prisma/index';
+import { PrismaClient, User, Clinic, UserRole } from "@prisma/client";
 import { JWTService, TokenResponse } from '../utils/jwt';
 import { PasswordService } from '../utils/password';
 import { logger } from '../utils/logger';
@@ -60,17 +60,17 @@ export class AuthService {
     });
 
     if (!user) {
-      throw createError('Invalid email or password', 401);
+      throw createError(401, 'Invalid email or password');
     }
 
     if (!user.isActive) {
-      throw createError('Account is deactivated', 401);
+      throw createError(401, 'Account is deactivated');
     }
 
     const isPasswordValid = await PasswordService.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw createError('Invalid email or password', 401);
+      throw createError(401, 'Invalid email or password');
     }
 
     // Check clinic access if clinicId is provided
@@ -81,7 +81,7 @@ export class AuthService {
       const clinicAccess = user.clinicAccesses.find(ca => ca.clinicId === clinicId);
 
       if (!clinicAccess) {
-        throw createError('No access to this clinic', 403);
+        throw createError(403, 'No access to this clinic');
       }
 
       currentClinic = clinicAccess.clinic;
@@ -113,7 +113,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw createError('User with this email already exists', 409);
+      throw createError(409, 'User with this email already exists');
     }
 
     // Hash password
@@ -209,7 +209,7 @@ export class AuthService {
       });
 
       if (!user || !user.isActive) {
-        throw createError('User not found or inactive', 401);
+        throw createError(401, 'User not found or inactive');
       }
 
       // Remove password hash from user object
@@ -233,7 +233,7 @@ export class AuthService {
         clinics
       );
     } catch (error) {
-      throw createError('Invalid refresh token', 401);
+      throw createError(401, 'Invalid refresh token');
     }
   }
 
@@ -261,7 +261,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw createError('User not found', 404);
+      throw createError(404, 'User not found');
     }
 
     // Remove password hash
@@ -276,13 +276,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw createError('User not found', 404);
+      throw createError(404, 'User not found');
     }
 
     const isCurrentPasswordValid = await PasswordService.compare(currentPassword, user.passwordHash);
 
     if (!isCurrentPasswordValid) {
-      throw createError('Current password is incorrect', 401);
+      throw createError(401, 'Current password is incorrect');
     }
 
     const newPasswordHash = await PasswordService.hash(newPassword);
@@ -300,7 +300,7 @@ export class AuthService {
       // Check if GOOGLE_CLIENT_ID is configured
       if (!process.env.GOOGLE_CLIENT_ID) {
         logger.error('GOOGLE_CLIENT_ID environment variable is not set');
-        throw createError('Google OAuth is not properly configured', 500);
+        throw createError(500, 'Google OAuth is not properly configured');
       }
 
       // Verify Google ID token
@@ -313,7 +313,7 @@ export class AuthService {
 
       if (!payload || !payload.email) {
         logger.error('Invalid Google token payload:', payload);
-        throw createError('Invalid Google token', 401);
+        throw createError(401, 'Invalid Google token');
       }
 
       const { email, name, picture } = payload;
@@ -357,7 +357,7 @@ export class AuthService {
           userId: user.id
         });
       } else if (!user.isActive) {
-        throw createError('Account is deactivated', 401);
+        throw createError(401, 'Account is deactivated');
       }
 
       // Remove password hash from user object
@@ -400,20 +400,20 @@ export class AuthService {
 
       // Provide more specific error messages
       if (error.message.includes('Wrong number of segments in id token')) {
-        throw createError('Invalid ID token format', 401);
+        throw createError(401, 'Invalid ID token format');
       } else if (error.message.includes('Invalid token signature')) {
-        throw createError('Invalid token signature', 401);
+        throw createError(401, 'Invalid token signature');
       } else if (error.message.includes('Token used too early')) {
-        throw createError('Token not yet valid', 401);
+        throw createError(401, 'Token not yet valid');
       } else if (error.message.includes('Token expired')) {
-        throw createError('Token has expired', 401);
+        throw createError(401, 'Token has expired');
       } else if (error.message.includes('audience')) {
-        throw createError('Token audience mismatch', 401);
+        throw createError(401, 'Token audience mismatch');
       } else if (error.message.includes('issuer')) {
-        throw createError('Token issuer mismatch', 401);
+        throw createError(401, 'Token issuer mismatch');
       }
 
-      throw createError('Failed to authenticate with Google', 401);
+      throw createError(401, 'Failed to authenticate with Google');
     }
   }
 }

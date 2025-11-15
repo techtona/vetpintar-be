@@ -1,0 +1,46 @@
+// ============================================
+// MEDICAL RECORDS & HOSPITALIZATION
+// ============================================
+
+model MedicalRecord {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId      String       @map("patient_id") @db.Uuid
+  veterinarianId String       @map("veterinarian_id") @db.Uuid
+  clinicId       String       @map("clinic_id") @db.Uuid
+  visitDate      DateTime     @map("visit_date")
+  chiefComplaint String       @map("chief_complaint")
+  diagnosis      String?
+  treatment      String?
+  prescription   String?
+  notes          String?
+  weight         Decimal?     @db.Decimal(10, 2)
+  temperature    Decimal?     @db.Decimal(5, 2)
+  status         RecordStatus @default(OUTPATIENT)
+  totalAmount    Decimal?     @map("total_amount") @db.Decimal(12, 2)
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  patient          Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  veterinarian     User              @relation("VeterinarianRecords", fields: [veterinarianId], references: [id])
+  clinic           Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  hospitalizations Hospitalization[]
+
+  @@map("medical_records")
+}
+
+model Hospitalization {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  medicalRecordId String    @map("medical_record_id") @db.Uuid
+  admissionDate   DateTime  @map("admission_date")
+  dischargeDate   DateTime? @map("discharge_date")
+  cageNumber      String?   @map("cage_number")
+  dailyNotes      String?   @map("daily_notes")
+  status          String    @default("ADMITTED")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("hospitalizations")
+}

@@ -1,4 +1,4 @@
-import { PrismaClient, User, UserRole, ClinicAccessRole } from '../generated/prisma/index';
+import { PrismaClient, User, UserRole, ClinicAccessRole } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { PasswordService } from '../utils/password';
@@ -41,7 +41,7 @@ export class UserService {
     this.passwordService = new PasswordService();
   }
 
-  async createUser(data: CreateUserData): Promise<User> {
+  async createUser(data: CreateUserData): Promise<Omit<User, 'passwordHash'>> {
     try {
       // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({
@@ -53,7 +53,7 @@ export class UserService {
       }
 
       // Hash password
-      const passwordHash = await this.passwordService.hash(data.password);
+      const passwordHash = await PasswordService.hash(data.password);
 
       const user = await this.prisma.user.create({
         data: {
@@ -84,7 +84,7 @@ export class UserService {
       const { passwordHash: _, ...userWithoutPassword } = user;
 
       logger.info(`User created: ${user.id} with role: ${user.role}`);
-      return userWithoutPassword as User;
+      return userWithoutPassword;
     } catch (error) {
       logger.error('Error creating user:', error);
       throw error;
@@ -92,7 +92,7 @@ export class UserService {
   }
 
   async getUsers(query: GetUsersQuery): Promise<{
-    users: User[];
+    users: Omit<User, 'passwordHash'>[];
     total: number;
     page: number;
     totalPages: number;
@@ -166,7 +166,7 @@ export class UserService {
       });
 
       return {
-        users: usersWithoutPasswords as User[],
+        users: usersWithoutPasswords,
         total,
         page,
         totalPages
@@ -177,7 +177,7 @@ export class UserService {
     }
   }
 
-  async getUserById(id: string): Promise<User> {
+  async getUserById(id: string): Promise<Omit<User, 'passwordHash'>> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id },
@@ -211,14 +211,14 @@ export class UserService {
       // Remove password hash from response
       const { passwordHash: _, ...userWithoutPassword } = user;
 
-      return userWithoutPassword as User;
+      return userWithoutPassword;
     } catch (error) {
       logger.error('Error fetching user:', error);
       throw error;
     }
   }
 
-  async updateUser(id: string, data: UpdateUserData): Promise<User> {
+  async updateUser(id: string, data: UpdateUserData): Promise<Omit<User, 'passwordHash'>> {
     try {
       const existingUser = await this.prisma.user.findUnique({
         where: { id }
@@ -252,7 +252,7 @@ export class UserService {
       const { passwordHash: _, ...userWithoutPassword } = updatedUser;
 
       logger.info(`User updated: ${updatedUser.id}`);
-      return userWithoutPassword as User;
+      return userWithoutPassword;
     } catch (error) {
       logger.error('Error updating user:', error);
       throw error;
@@ -270,17 +270,17 @@ export class UserService {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await this.passwordService.compare(
+      const isCurrentPasswordValid = await PasswordService.compare(
         currentPassword,
         user.passwordHash
       );
 
       if (!isCurrentPasswordValid) {
-        throw createError('Current password is incorrect', 400);
+        throw createError(400, 'Current password is incorrect');
       }
 
       // Hash new password
-      const newPasswordHash = await this.passwordService.hash(newPassword);
+      const newPasswordHash = await PasswordService.hash(newPassword);
 
       await this.prisma.user.update({
         where: { id },
@@ -308,7 +308,7 @@ export class UserService {
       }
 
       // Hash new password
-      const newPasswordHash = await this.passwordService.hash(newPassword);
+      const newPasswordHash = await PasswordService.hash(newPassword);
 
       await this.prisma.user.update({
         where: { id },
@@ -364,7 +364,7 @@ export class UserService {
     }
   }
 
-  async activateUser(id: string): Promise<User> {
+  async activateUser(id: string): Promise<Omit<User, 'passwordHash'>> {
     try {
       const user = await this.prisma.user.update({
         where: { id },
@@ -390,7 +390,7 @@ export class UserService {
       const { passwordHash: _, ...userWithoutPassword } = user;
 
       logger.info(`User activated: ${id}`);
-      return userWithoutPassword as User;
+      return userWithoutPassword;
     } catch (error) {
       logger.error('Error activating user:', error);
       throw error;
@@ -511,7 +511,7 @@ export class UserService {
     }
   }
 
-  async searchUsers(query: string, clinicId?: string, limit: number = 10): Promise<User[]> {
+  async searchUsers(query: string, clinicId?: string, limit: number = 10): Promise<Omit<User, 'passwordHash'>[]> {
     try {
       const where: any = {
         isActive: true,
@@ -552,7 +552,7 @@ export class UserService {
         return userWithoutPassword;
       });
 
-      return usersWithoutPasswords as User[];
+      return usersWithoutPasswords;
     } catch (error) {
       logger.error('Error searching users:', error);
       throw error;

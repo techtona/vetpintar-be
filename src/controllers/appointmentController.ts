@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types';
 import { appointmentService } from '../services/appointmentService';
-import { AppointmentStatus } from '../generated/prisma/index';
+import { AppointmentStatus } from "@prisma/client";
 
 class AppointmentController {
   // GET /api/appointments

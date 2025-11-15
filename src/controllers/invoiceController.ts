@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest, PaginationParams } from '../types';
 import { prisma } from '../utils/database';
-import { InvoiceStatus, PaymentMethod } from '../generated/prisma/index';
+import { InvoiceStatus, PaymentMethod } from "@prisma/client";
 
 interface CreateInvoiceRequest {
   patientId: string;

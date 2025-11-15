@@ -18,6 +18,7 @@ import { invoiceRoutes } from './routes/invoices';
 import { productRoutes } from './routes/products';
 import { appointmentRoutes } from './routes/appointments';
 import { healthRoutes } from './routes/health';
+import { dashboardRoutes } from './routes/dashboard';
 import { swaggerUi, specs } from './config/swagger';
 
 dotenv.config();
@@ -123,6 +124,7 @@ app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

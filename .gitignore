@@ -8,6 +8,7 @@ dist/
 .env
 .env.local
 .env.production
+.env.prod
 
 # Logs
 logs/
@@ -32,4 +33,9 @@ uploads/
 
 # Prisma
 prisma/migrations/
-/src/generated/prisma
+# Uncomment if you want to ignore auto-generated schema.prisma (optional)
+# prisma/schema.prisma
+
+database
+
+.claude

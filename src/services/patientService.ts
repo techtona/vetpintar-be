@@ -1,4 +1,4 @@
-import { PrismaClient, Patient } from '../generated/prisma/index';
+import { PrismaClient, Patient } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -18,9 +18,9 @@ interface CreatePatientData {
 
 interface UpdatePatientData {
   name?: string;
-  species?: Species;
+  species?: string;
   breed?: string;
-  gender?: Gender;
+  gender?: string;
   birthDate?: Date;
   color?: string;
   microchipId?: string;
@@ -34,7 +34,7 @@ interface GetPatientsQuery {
   clinicId?: string;
   ownerId?: string;
   search?: string;
-  species?: Species;
+  species?: string;
   isActive?: boolean;
 }
 

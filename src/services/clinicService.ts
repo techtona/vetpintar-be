@@ -1,4 +1,4 @@
-import { PrismaClient, Clinic, SubscriptionStatus, ClinicAccessRole } from '../generated/prisma/index';
+import { PrismaClient, Clinic, SubscriptionStatus, ClinicAccessRole } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -153,7 +153,7 @@ export class ClinicService {
       });
 
       if (!clinic) {
-        throw createError('Clinic not found', 404);
+        throw createError(404, 'Clinic not found');
       }
 
       return clinic;
@@ -170,7 +170,7 @@ export class ClinicService {
       });
 
       if (!clinic) {
-        throw createError('Clinic not found', 404);
+        throw createError(404, 'Clinic not found');
       }
 
       const updatedClinic = await this.prisma.clinic.update({
@@ -206,7 +206,7 @@ export class ClinicService {
       });
 
       if (!clinic) {
-        throw createError('Clinic not found', 404);
+        throw createError(404, 'Clinic not found');
       }
 
       // Check if clinic has associated data
@@ -251,7 +251,7 @@ export class ClinicService {
       });
 
       if (!user) {
-        throw createError('User not found', 404);
+        throw createError(404, 'User not found');
       }
 
       // Verify clinic exists
@@ -260,7 +260,7 @@ export class ClinicService {
       });
 
       if (!clinic) {
-        throw createError('Clinic not found', 404);
+        throw createError(404, 'Clinic not found');
       }
 
       // Check if user already has access to this clinic
@@ -299,7 +299,7 @@ export class ClinicService {
       });
 
       if (!clinicAccess) {
-        throw createError('User access not found for this clinic', 404);
+        throw createError(404, 'User access not found for this clinic');
       }
 
       await this.prisma.clinicAccess.delete({

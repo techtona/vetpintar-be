@@ -1,4 +1,4 @@
-import { PrismaClient, Product, ProductCategory } from '../generated/prisma/index';
+import { PrismaClient, Product, ProductCategory } from "@prisma/client";
 import { logger } from '../utils/logger';
 import { createError } from '../middleware/errorHandler';
 import { prisma } from '../utils/database';
@@ -147,9 +147,8 @@ export class ProductService {
         where.category = category;
       }
 
-      if (lowStock) {
-        where.stockQuantity = { lte: this.prisma.product.fields.minStockAlert };
-      }
+      // Note: lowStock filtering is handled post-query since Prisma doesn't support field-to-field comparison
+      // We'll filter the results after fetching if lowStock is true
 
       if (expiring) {
         const thirtyDaysFromNow = new Date();
@@ -169,11 +168,11 @@ export class ProductService {
         ];
       }
 
-      const [products, total] = await Promise.all([
+      let [products, total] = await Promise.all([
         this.prisma.product.findMany({
           where,
-          skip,
-          take: limit,
+          skip: lowStock ? 0 : skip, // If lowStock, fetch all then filter
+          take: lowStock ? undefined : limit, // If lowStock, fetch all then filter
           orderBy: { createdAt: 'desc' },
           include: {
             clinic: {
@@ -191,6 +190,14 @@ export class ProductService {
         }),
         this.prisma.product.count({ where })
       ]);
+
+      // Filter low stock products post-query
+      if (lowStock) {
+        products = products.filter(p => p.stockQuantity <= p.minStockAlert);
+        total = products.length;
+        // Apply pagination after filtering
+        products = products.slice(skip, skip + limit);
+      }
 
       const totalPages = Math.ceil(total / limit);
 
@@ -225,7 +232,6 @@ export class ProductService {
           },
           invoiceItems: {
             take: 10,
-            orderBy: { createdAt: 'desc' },
             include: {
               invoice: {
                 select: {
@@ -422,19 +428,22 @@ export class ProductService {
 
   async getLowStockProducts(clinicId: string): Promise<Product[]> {
     try {
-      const products = await this.prisma.product.findMany({
+      const allProducts = await this.prisma.product.findMany({
         where: {
           clinicId,
-          isActive: true,
-          stockQuantity: {
-            lte: this.prisma.product.fields.minStockAlert
-          }
-        },
-        orderBy: [
-          { stockQuantity: 'asc' },
-          { name: 'asc' }
-        ]
+          isActive: true
+        }
       });
+
+      // Filter products where stockQuantity <= minStockAlert
+      const products = allProducts
+        .filter(p => p.stockQuantity <= p.minStockAlert)
+        .sort((a, b) => {
+          if (a.stockQuantity !== b.stockQuantity) {
+            return a.stockQuantity - b.stockQuantity;
+          }
+          return a.name.localeCompare(b.name);
+        });
 
       return products;
     } catch (error) {
@@ -483,10 +492,9 @@ export class ProductService {
       const [
         totalProducts,
         activeProducts,
-        lowStockProducts,
+        allActiveProducts,
         expiringProducts,
-        categoryByCount,
-        totalValueData
+        categoryByCount
       ] = await Promise.all([
         this.prisma.product.count({
           where: { clinicId }
@@ -494,13 +502,12 @@ export class ProductService {
         this.prisma.product.count({
           where: { clinicId, isActive: true }
         }),
-        this.prisma.product.count({
-          where: {
-            clinicId,
-            isActive: true,
-            stockQuantity: {
-              lte: this.prisma.product.fields.minStockAlert
-            }
+        this.prisma.product.findMany({
+          where: { clinicId, isActive: true },
+          select: {
+            stockQuantity: true,
+            minStockAlert: true,
+            price: true
           }
         }),
         this.prisma.product.count({
@@ -517,16 +524,14 @@ export class ProductService {
           by: ['category'],
           where: { clinicId, isActive: true },
           _count: { category: true }
-        }),
-        this.prisma.product.aggregate({
-          where: { clinicId, isActive: true },
-          _sum: {
-            stockQuantity: {
-              then: (stock) => ({ multiply: [stock, 'price'] })
-            }
-          }
         })
       ]);
+
+      // Calculate low stock count and total value from fetched products
+      const lowStockProducts = allActiveProducts.filter(p => p.stockQuantity <= p.minStockAlert).length;
+      const totalValue = allActiveProducts.reduce((sum, p) => {
+        return sum + (Number(p.stockQuantity) * Number(p.price));
+      }, 0);
 
       const categoryDistribution = categoryByCount.reduce((acc, item) => {
         acc[item.category] = item._count.category;
@@ -538,7 +543,7 @@ export class ProductService {
         activeProducts,
         lowStockProducts,
         expiringProducts,
-        totalValue: 0, // TODO: Calculate total inventory value properly
+        totalValue,
         categoryDistribution
       };
     } catch (error) {

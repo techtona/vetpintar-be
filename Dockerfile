@@ -36,13 +36,17 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production && npm cache clean --force
 
-# Copy built application and generated Prisma client
+# Copy built application and Prisma schema
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/src/generated ./src/generated
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --chown=nodejs:nodejs entrypoint.sh /app/entrypoint.sh
 
-# Create logs directory
-RUN mkdir -p logs && chown nodejs:nodejs logs
+# Generate Prisma Client in production (will be in node_modules/@prisma/client)
+RUN npx prisma generate
+
+# Create logs directory and make entrypoint executable
+RUN mkdir -p logs && chown nodejs:nodejs logs && \
+    chmod +x /app/entrypoint.sh
 
 # Switch to non-root user
 USER nodejs
@@ -54,6 +58,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application with dumb-init
-ENTRYPOINT ["dumb-init", "--"]
+# Start the application with dumb-init and entrypoint
+ENTRYPOINT ["dumb-init", "--", "/app/entrypoint.sh"]
 CMD ["node", "dist/index.js"]
