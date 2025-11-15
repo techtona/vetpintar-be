@@ -25,13 +25,13 @@ jobs:
       - name: Build Docker images
         run: |
           cd /opt/vetpintar-new-be
-          docker compose build --no-cache
+          docker compose -f docker-compose.prod.yml build --no-cache
 
       - name: Deploy containers
         run: |
           cd /opt/vetpintar-new-be
-          docker compose down
-          docker compose up -d
+          docker compose -f docker-compose.prod.yml down
+          docker compose -f docker-compose.prod.yml up -d
 
       - name: Cleanup old images
         run: |
@@ -40,5 +40,5 @@ jobs:
       - name: Verify deployment
         run: |
           cd /opt/vetpintar-new-be
-          docker compose ps
+          docker compose -f docker-compose.prod.yml ps
           echo "Deployment completed successfully!"
