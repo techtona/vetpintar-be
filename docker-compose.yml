@@ -1,0 +1,36 @@
+services:
+  # PostgreSQL Database for development
+  postgres:
+    image: postgres:15-alpine
+    container_name: vetpintar-db
+    environment:
+      POSTGRES_DB: vetpintar_dev
+      POSTGRES_USER: vetpintar
+      POSTGRES_PASSWORD: vetpintar123
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - vetpintar_network
+
+  # Redis for development
+  redis:
+    image: redis:7-alpine
+    container_name: vetpintar-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379"
+    networks:
+      - vetpintar_network
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  vetpintar_network:
+    driver: bridge

@@ -1,0 +1,333 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  OWNER
+  VETERINARIAN
+  ADMIN
+  STAFF
+  CUSTOMER
+  GUEST
+  SUPER_ADMIN
+}
+
+enum ClinicAccessRole {
+  OWNER
+  MANAGER
+  VETERINARIAN
+  STAFF
+  VIEWER
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum ProductCategory {
+  MEDICINE
+  FOOD
+  ACCESSORY
+  SERVICE
+  VACCINE
+  CONSUMABLE
+}
+
+enum RecordStatus {
+  OUTPATIENT
+  INPATIENT
+  DISCHARGED
+  REFERRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  PARTIAL
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CREDIT_CARD
+  E_WALLET
+  XENDIT
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Models
+model User {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  name            String
+  phone           String?
+  role            UserRole
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  clinicAccesses  ClinicAccess[]
+  medicalRecords  MedicalRecord[] @relation("VeterinarianRecords")
+  patients        Patient[]
+  invoices        Invoice[]
+  appointments    Appointment[] @relation("VeterinarianAppointments")
+
+  @@map("users")
+}
+
+model ClinicAccess {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String          @map("user_id") @db.Uuid
+  clinicId    String          @map("clinic_id") @db.Uuid
+  accessRole  ClinicAccessRole @map("access_role")
+  grantedAt   DateTime        @default(now()) @map("granted_at")
+
+  // Relations
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic      Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clinicId])
+  @@map("clinic_accesses")
+}
+
+model Clinic {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String
+  email               String?
+  phone               String?
+  address             String?
+  city                String?
+  province            String?
+  postalCode          String?             @map("postal_code")
+  logoUrl             String?             @map("logo_url")
+  isActive            Boolean             @default(true) @map("is_active")
+  subscriptionStatus  SubscriptionStatus  @default(TRIAL) @map("subscription_status")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  clinicAccesses      ClinicAccess[]
+  patients            Patient[]
+  medicalRecords      MedicalRecord[]
+  products            Product[]
+  invoices            Invoice[]
+  appointments        Appointment[]
+
+  @@map("clinics")
+}
+
+model Patient {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId      String    @map("clinic_id") @db.Uuid
+  ownerId       String    @map("owner_id") @db.Uuid
+  name          String
+  species       String
+  breed         String?
+  gender        String?
+  birthDate     DateTime? @map("birth_date") @db.Date
+  color         String?
+  microchipId   String?   @map("microchip_id")
+  photoUrl      String?   @map("photo_url")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  clinic        Clinic          @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  medicalRecords MedicalRecord[]
+  invoices      Invoice[]
+  appointments  Appointment[]
+
+  @@map("patients")
+}
+
+model MedicalRecord {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patientId       String        @map("patient_id") @db.Uuid
+  veterinarianId  String        @map("veterinarian_id") @db.Uuid
+  clinicId        String        @map("clinic_id") @db.Uuid
+  visitDate       DateTime      @map("visit_date")
+  chiefComplaint  String        @map("chief_complaint")
+  diagnosis       String?
+  treatment       String?
+  prescription    String?
+  notes           String?
+  weight          Decimal?      @db.Decimal(10, 2)
+  temperature     Decimal?      @db.Decimal(5, 2)
+  status          RecordStatus  @default(OUTPATIENT)
+  totalAmount     Decimal?      @map("total_amount") @db.Decimal(12, 2)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  veterinarian    User             @relation("VeterinarianRecords", fields: [veterinarianId], references: [id])
+  clinic          Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  hospitalizations Hospitalization[]
+
+  @@map("medical_records")
+}
+
+model Hospitalization {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  medicalRecordId String   @map("medical_record_id") @db.Uuid
+  admissionDate  DateTime  @map("admission_date")
+  dischargeDate  DateTime? @map("discharge_date")
+  cageNumber     String?   @map("cage_number")
+  dailyNotes     String?   @map("daily_notes")
+  status         String    @default("ADMITTED")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  medicalRecord  MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@map("hospitalizations")
+}
+
+model Product {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId        String            @map("clinic_id") @db.Uuid
+  name            String
+  description     String?
+  category        ProductCategory
+  unit            String?
+  price           Decimal           @db.Decimal(12, 2)
+  stockQuantity   Int               @default(0) @map("stock_quantity")
+  minStockAlert   Int               @default(10) @map("min_stock_alert")
+  expiryDate      DateTime?         @map("expiry_date") @db.Date
+  sku             String?           @unique
+  barcode         String?
+  photoUrl        String?           @map("photo_url")
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  clinic          Clinic            @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  invoiceItems    InvoiceItem[]
+
+  @@map("products")
+}
+
+model Invoice {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId        String        @map("clinic_id") @db.Uuid
+  patientId       String        @map("patient_id") @db.Uuid
+  ownerId         String        @map("owner_id") @db.Uuid
+  invoiceNumber   String        @unique @map("invoice_number")
+  issueDate       DateTime      @map("issue_date") @db.Date
+  dueDate         DateTime?     @map("due_date") @db.Date
+  subtotal        Decimal       @db.Decimal(12, 2)
+  taxAmount       Decimal       @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  discountAmount  Decimal       @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount     Decimal       @db.Decimal(12, 2)
+  status          InvoiceStatus @default(DRAFT)
+  paymentMethod   String?       @map("payment_method")
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  clinic          Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient         Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items           InvoiceItem[]
+  payments        Payment[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoiceId        String   @map("invoice_id") @db.Uuid
+  productId        String?  @map("product_id") @db.Uuid
+  description      String
+  quantity         Int
+  unitPrice        Decimal  @map("unit_price") @db.Decimal(12, 2)
+  discountPercent  Decimal  @default(0) @map("discount_percent") @db.Decimal(5, 2)
+  totalPrice       Decimal  @map("total_price") @db.Decimal(12, 2)
+
+  // Relations
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product          Product? @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  invoiceId      String         @map("invoice_id") @db.Uuid
+  amount         Decimal        @db.Decimal(12, 2)
+  paymentMethod  PaymentMethod  @map("payment_method")
+  paymentDate    DateTime       @map("payment_date")
+  transactionId  String?        @map("transaction_id")
+  status         PaymentStatus  @default(PENDING)
+  notes          String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  invoice        Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Appointment {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clinicId          String              @map("clinic_id") @db.Uuid
+  patientId         String              @map("patient_id") @db.Uuid
+  veterinarianId    String?             @map("veterinarian_id") @db.Uuid
+  appointmentDate   DateTime            @map("appointment_date")
+  appointmentTime   String              @map("appointment_time")
+  duration          Int                 @default(30) // in minutes
+  type              String              // e.g., "Regular Checkup", "Vaccination", "Surgery"
+  status            AppointmentStatus   @default(SCHEDULED)
+  reason            String?
+  notes             String?
+  reminderSent      Boolean             @default(false) @map("reminder_sent")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  clinic            Clinic              @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient           Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  veterinarian      User?               @relation("VeterinarianAppointments", fields: [veterinarianId], references: [id])
+
+  @@map("appointments")
+}
