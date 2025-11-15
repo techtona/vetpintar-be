@@ -7,8 +7,11 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
+// Skip rate limiting in test environment
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 // Rate limiting for sensitive auth routes (login, register)
-const strictAuthLimiter = rateLimit({
+const strictAuthLimiter = isTestEnv ? (_req: any, _res: any, next: any) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 requests per windowMs
   message: {
@@ -20,7 +23,7 @@ const strictAuthLimiter = rateLimit({
 });
 
 // Relaxed rate limiting for token validation
-const meEndpointLimiter = rateLimit({
+const meEndpointLimiter = isTestEnv ? (_req: any, _res: any, next: any) => next() : rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 60, // 60 requests per minute
   standardHeaders: true,
@@ -30,7 +33,7 @@ const meEndpointLimiter = rateLimit({
 router.post('/login', strictAuthLimiter, validateBody(loginSchema), authController.login);
 router.post('/register', strictAuthLimiter, validateBody(registerSchema), authController.register);
 router.post('/refresh', validateBody(refreshTokenSchema), authController.refreshToken);
-router.post('/logout', authController.logout);
+router.post('/logout', authenticateToken, authController.logout);
 router.get('/me', meEndpointLimiter, authenticateToken, authController.getCurrentUser);
 router.post('/google-login', strictAuthLimiter, validateBody(googleAuthSchema), authController.googleLogin);
 

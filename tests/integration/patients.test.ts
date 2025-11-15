@@ -18,14 +18,18 @@ describe('Patients API', () => {
     app.use(express.json());
 
     // Import routes after app setup
-    const { patientRoutes } = await import('../../routes/patients');
+    const { patientRoutes } = await import('../../src/routes/patients');
     app.use('/api/patients', patientRoutes);
+
+    // Add error handler
+    const { errorHandler } = await import('../../src/middleware/errorHandler');
+    app.use(errorHandler);
 
     // Create test data
     testUser = await createTestUser(testPrisma);
     testClinic = await createTestClinic(testPrisma);
     await createClinicAccess(testPrisma, testUser.id, testClinic.id, 'VETERINARIAN');
-    authToken = await generateTestToken(testUser.id);
+    authToken = await generateTestToken(testUser.id, testClinic.id);
     authHeaders = await getAuthHeaders(authToken);
   });
 
@@ -150,7 +154,8 @@ describe('Patients API', () => {
         gender: 'Female',
         birthDate: '2021-05-15',
         color: 'White',
-        ownerId: testUser.id
+        ownerId: testUser.id,
+        clinicId: testClinic.id
       };
 
       const response = await request(app)
@@ -177,12 +182,12 @@ describe('Patients API', () => {
         ownerId: 'invalid-id'
       };
 
-      const response = request(app)
+      const response = await request(app)
         .post('/api/patients')
         .set(authHeaders)
         .send(invalidPatient);
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
     });
 
     it('should return 401 without authentication', async () => {

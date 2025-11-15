@@ -1,5 +1,5 @@
 import { UserRole, ProductCategory } from "@prisma/client";
-import { PasswordService } from '../src/utils/password';
+import { PasswordService } from '../../src/utils/password';
 
 // Test data utilities
 export const createTestUser = async (testPrisma: any, overrides: any = {}) => {
@@ -56,7 +56,7 @@ export const createTestPatient = async (testPrisma: any, clinicId: string, owner
     color: 'Golden'
   };
 
-  return await testPatient.create({
+  return await testPrisma.patient.create({
     data: { ...defaultPatient, ...overrides }
   });
 };
@@ -80,14 +80,19 @@ export const createTestProduct = async (testPrisma: any, clinicId: string, overr
 };
 
 // Auth token helpers
-export const generateTestToken = async (userId: string) => {
-  const { JWTService } = await import('../../utils/jwt');
-  const jwtService = new JWTService();
-
-  return jwtService.generateAccessToken({
+export const generateTestToken = async (userId: string, clinicId?: string) => {
+  const jwt = await import('jsonwebtoken');
+  const payload = {
     userId,
     email: 'test@example.com',
-    role: UserRole.OWNER
+    role: UserRole.OWNER,
+    clinicId
+  };
+
+  return jwt.default.sign(payload, process.env.JWT_SECRET || 'test-secret', {
+    expiresIn: '15m',
+    issuer: 'vetpintar-api',
+    audience: 'vetpintar-client'
   });
 };
 

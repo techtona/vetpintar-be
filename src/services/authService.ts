@@ -126,7 +126,7 @@ export class AuthService {
         passwordHash,
         name: userData.name,
         phone: userData.phone,
-        role: userData.role,
+        role: userData.role || 'OWNER',
         isActive: true
       },
       include: {

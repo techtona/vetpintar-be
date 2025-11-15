@@ -17,14 +17,18 @@ describe('Authentication API', () => {
     app.use(express.json());
 
     // Import routes after app setup
-    const { authRoutes } = await import('../../routes/auth');
+    const { authRoutes } = await import('../../src/routes/auth');
     app.use('/api/auth', authRoutes);
+
+    // Add error handler
+    const { errorHandler } = await import('../../src/middleware/errorHandler');
+    app.use(errorHandler);
 
     // Create test data
     testUser = await createTestUser(testPrisma);
     testClinic = await createTestClinic(testPrisma);
     await createClinicAccess(testPrisma, testUser.id, testClinic.id, 'OWNER');
-    authToken = await generateTestToken(testUser.id);
+    authToken = await generateTestToken(testUser.id, testClinic.id);
     authHeaders = await getAuthHeaders(authToken);
   });
 
@@ -61,7 +65,7 @@ describe('Authentication API', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Invalid credentials');
+      expect(response.body.message).toContain('Invalid email or password');
     });
 
     it('should return error with invalid password', async () => {
@@ -74,7 +78,7 @@ describe('Authentication API', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Invalid credentials');
+      expect(response.body.message).toContain('Invalid email or password');
     });
 
     it('should return error with missing credentials', async () => {
@@ -157,7 +161,7 @@ describe('Authentication API', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toContain('User registered successfully');
+      expect(response.body.message).toContain('Registration successful');
       expect(response.body.data.user.email).toBe(newUser.email);
 
       // Cleanup
@@ -179,7 +183,7 @@ describe('Authentication API', () => {
 
       expect(response.status).toBe(409);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('Email already exists');
+      expect(response.body.message).toContain('User with this email already exists');
     });
 
     it('should return error with invalid email format', async () => {
@@ -204,7 +208,7 @@ describe('Authentication API', () => {
         name: 'Weak Password User'
       };
 
-      const response = request(app)
+      const response = await request(app)
         .post('/api/auth/register')
         .send(weakPasswordUser);
 

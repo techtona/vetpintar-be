@@ -21,7 +21,7 @@ export type RegisterDto = z.infer<typeof registerSchema>;
 
 // Google OAuth
 export const googleAuthSchema = z.object({
-  credential: z.string().min(1, 'Credential is required')
+  idToken: z.string().min(1, 'ID token is required')
 });
 
 export type GoogleAuthDto = z.infer<typeof googleAuthSchema>;
